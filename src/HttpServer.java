@@ -8,6 +8,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import util.HttpHeader;
+import util.Logger;
+
 public class HttpServer {
     private final int portNumber;
     private final Route route;
@@ -43,10 +46,10 @@ public class HttpServer {
             PrintWriter socketOutputStream = new PrintWriter(clientSocket.getOutputStream(), true);
             BufferedReader socketInputStream = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         ) {
-            Logger.log("HttpServer", "Client connected to the server");
-
+            
             activeConnections.incrementAndGet();
-            Logger.log("HttpServer", "New connection made. Active connections: " + getActiveConnections());
+            Logger.log("HttpServer", "Client connected to the server");
+            Logger.log("HttpServer", "Active connections: " + getActiveConnections());
 
             Request request = new Request();
             Response response;

@@ -1,3 +1,4 @@
+package util;
 public abstract class HttpMethod {
 
     // Prevent instantiation
