@@ -10,7 +10,7 @@ import java.util.Map;
 public class HttpServer {
     private int portNumber;
     private Request request = new Request();
-    private Response response = new Response();
+    private Response response;
     private Route route;
 
     public HttpServer(int portNumber, Route route){
@@ -18,7 +18,7 @@ public class HttpServer {
         this.route = route;
     }
 
-    public void initiate(){
+    public void listen(){
         try (
             ServerSocket serverSocket = new ServerSocket(portNumber);
             // accept the connection from client made to the listening port number.
@@ -45,14 +45,22 @@ public class HttpServer {
                 this.request.setHeaders(headers);
 
                 // TODO: Extract the body here.
-                
 
-                // return the function provided for the specific route and method.
-                RouteFunction routeFunction = route.getRouteFunction(this.request.getRequestMethod(), this.request.getRequestUrl());
-                
-                // Provide the user with request and response objects.
-                String responseMessage = routeFunction.work(this.request, this.response);
+                // initialize the response object with defaults.
+                this.response = new Response(this.request.getRequestHttpVersion());
 
+                String responseMessage = null; 
+                try {
+                    // return the function provided for the specific route and method.
+                    RouteFunction routeFunction = route.getRouteFunction(this.request.getRequestMethod(), this.request.getRequestUrl());
+
+                    // Provide the user with request and response objects.
+                    responseMessage = routeFunction.work(this.request, this.response);
+                    Logger.log("SocketServer", "Response sent successfully");
+                } catch (Exception e) {
+                    responseMessage = this.response.getDefaultResponse();
+                    Logger.log("SocketServer", "Responded with default response");
+                }
                 // flush the response to the client.
                 socketOutputStream.println(responseMessage);
             }

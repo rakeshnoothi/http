@@ -12,6 +12,11 @@ public class Route {
 
     // retreive the function provided for specific route and method.
     public RouteFunction getRouteFunction(String method, String route){
-        return routes.get(method + " " + route);
+        String key = method + " " + route;
+        if(routes.containsKey(key)){
+            return routes.get(key);
+        }else{
+            throw new IllegalArgumentException("The provide route or method does not exist");
+        }
     }
 }

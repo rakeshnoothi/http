@@ -1,14 +1,34 @@
 public class Response {
-    private StringBuilder httpHeaders = new StringBuilder(); 
+    private StringBuilder httpHeadersBuilder = new StringBuilder(); 
+    private StringBuilder responseBuilder = new StringBuilder();
+    private String httpResponseVersion;
 
-    public void setHeader(String header, String value){
-        this.httpHeaders.append(header + ": "  + value + "\r\n");
+    public Response(String httpResponseVersion){
+        this.httpResponseVersion = httpResponseVersion;
     }
 
-    public String getResponse(String httpVersion, int statusCode, String statusMessage, String body){
-        String responseStartLine = httpVersion + " " + statusCode + " " + statusMessage;
-        String httpHeader = this.httpHeaders.toString();
+    public void setHeader(String header, String value){
+        this.httpHeadersBuilder.append(header)
+                        .append(": ")
+                        .append(value)
+                        .append("\r\n");
+        
+    }
 
-        return responseStartLine + "\r\n" + httpHeader + "\r\n" + body;
+    public String getResponse(int statusCode, String statusMessage, String body){
+        String responseStartLine = httpResponseVersion + " " + statusCode + " " + statusMessage;
+        // String httpHeader = this.httpHeadersBuilder.toString();
+
+        return responseBuilder.append(responseStartLine)
+                            .append("\r\n")
+                            .append(this.httpHeadersBuilder)
+                            .append("\r\n")
+                            .append(body).toString(); 
+    }
+
+    public String getDefaultResponse(){
+        this.setHeader(HttpHeader.SERVER, "test");
+        this.setHeader(HttpHeader.CONTENT_TYPE, "text/html; charset=utf-8");
+        return this.getResponse(404, "Not Found", null);
     }
 }
