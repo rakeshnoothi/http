@@ -5,8 +5,16 @@ import java.util.Map;
 public class Response {
     private StringBuilder httpHeadersBuilder = new StringBuilder(); 
     private StringBuilder responseBuilder = new StringBuilder();
-    private String httpResponseVersion;
+    private final String httpResponseVersion;
     private Map<String, String> httpResponseHeaders = new HashMap<>();
+    private static final Map<String, String> defaultResponseHeaders = new HashMap<>();
+
+    static{
+        Response.defaultResponseHeaders.put(HttpHeader.CONNECTION, "keep-alive");
+        Response.defaultResponseHeaders.put(HttpHeader.SERVER, "Test/1.0 (windows)");
+        Response.defaultResponseHeaders.put(HttpHeader.CONTENT_TYPE, "text/html; charset=utf-8");
+        Response.defaultResponseHeaders.put(HttpHeader.CACHE_CONTROL, "no-store, no-cache, must-revalidate");
+    }
 
     public Response(String httpResponseVersion){
         this.httpResponseVersion = httpResponseVersion;
@@ -17,10 +25,8 @@ public class Response {
     }
 
     public String getResponse(int statusCode, String statusMessage, String body){
-        // set any default values here before invoking buildHttpHeaders method.
-        String contentLength;
         if(body != null){
-            contentLength =  String.valueOf( body.getBytes(StandardCharsets.UTF_8).length);
+            String contentLength =  String.valueOf(body.getBytes(StandardCharsets.UTF_8).length);
             this.setHeader(HttpHeader.CONTENT_LENGTH, contentLength);
         }
 
@@ -38,17 +44,25 @@ public class Response {
     }
 
     public String getDefaultResponse(){
-        this.setHeader(HttpHeader.SERVER, "test");
-        this.setHeader(HttpHeader.CONTENT_TYPE, "text/html; charset=utf-8");
         return this.getResponse(404, "Not Found", "<div>Page Not found</div>");
     }
 
     private void buildHttpHeaders(){
         this.httpResponseHeaders.forEach((key, value) -> {
-            this.httpHeadersBuilder.append(key)
+            Response.defaultResponseHeaders.forEach((defaultKey, defaultValue) -> {
+                if(defaultKey.equals(key)){
+                    this.httpHeadersBuilder.append(key)
                         .append(": ")
                         .append(value)
                         .append("\r\n");
+                }else{
+                    this.httpHeadersBuilder.append(defaultKey)
+                        .append(": ")
+                        .append(defaultValue)
+                        .append("\r\n");
+                }
+            });
+            
         });
     }
 }
