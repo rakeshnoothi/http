@@ -1,3 +1,4 @@
+import util.HttpContentType;
 import util.HttpHeader;
 import util.HttpMethod;
 
@@ -7,7 +8,7 @@ public class Main {
 
         // Define routes
         route.defineRoute(HttpMethod.GET, "/", (request, response) -> {
-            response.setHeader(HttpHeader.CONTENT_TYPE, "text/html; charset=utf-8");
+            response.setHeader(HttpHeader.CONTENT_TYPE, HttpContentType.TEXT_HTML_UTF8);
 
             String responseMessage = response.getResponse(200, "successfull", "<h1>Hello</h1>");
             return responseMessage;
