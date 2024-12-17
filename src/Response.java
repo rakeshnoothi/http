@@ -29,21 +29,28 @@ public class Response {
             // get the length of body.
             String contentLength =  String.valueOf(body.getBytes(StandardCharsets.UTF_8).length);
             this.setHeader(HttpHeader.CONTENT_LENGTH, contentLength);
+        }else{
+            this.setHeader(HttpHeader.CONTENT_LENGTH, "0");
         }
 
         // build the http headers builder string.
         buildHttpHeaders();
 
         // return the resposne
-        return responseBuilder.append(httpResponseVersion)
+        responseBuilder.append(httpResponseVersion)
                             .append(" ")
                             .append(statusCode)
                             .append(" ")
                             .append(statusMessage)
                             .append("\r\n")
                             .append(this.httpHeadersBuilder)
-                            .append("\r\n")
-                            .append(body).toString(); 
+                            .append("\r\n");
+
+        if(body != null){
+            responseBuilder.append(body).toString(); 
+        }
+
+        return responseBuilder.toString();
     }
 
     public String getDefaultResponse(){
@@ -57,6 +64,5 @@ public class Response {
                                     .append(value)
                                     .append("\r\n");
         });
-            
     }
 }
