@@ -1,7 +1,5 @@
-public class HttpRequestBody<T>{
-    T data;
+import java.util.Map;
 
-    public HttpRequestBody(T data){
-        this.data = data;
-    }
+public class HttpRequestBody{
+    Map<String, String> params;
 }

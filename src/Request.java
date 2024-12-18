@@ -3,7 +3,7 @@ import java.util.Map;
 public class Request {
     String[] startLineParts; 
     Map<String, String> headers;
-    HttpRequestBody<?> body;
+    HttpRequestBody bodyData;
 
     public String getRequestMethod(){
         return this.startLineParts[0];
@@ -19,5 +19,9 @@ public class Request {
 
     public String getRequestHeader(String header){
         return headers.get(header);
+    }
+
+    public String getParam(String key){
+        return bodyData.params.get(key);
     }
 }

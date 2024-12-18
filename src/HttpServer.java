@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+
 import util.HttpHeader;
 import util.Logger;
 
@@ -41,7 +42,6 @@ public class HttpServer {
                 Logger.log("HttpServer", "Client connected to the server");
                 Logger.log("HttpServer", "Active connections: " + this.getActiveConnections());
 
-                // TODO: may be use thread pool here.
                 threadPool.execute(() -> handleClient(clientSocket));
             }
         }catch(IOException ioException){
@@ -54,12 +54,17 @@ public class HttpServer {
             PrintWriter socketOutputStream = new PrintWriter(clientSocket.getOutputStream(), true);
             BufferedReader socketInputStream = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         ) {
+            
+            // printRequest(socketInputStream);
+            
             Request request = new Request();
             Response response;
             
             String startLine;
             while((startLine = socketInputStream.readLine()) != null && startLine.length() >= 0){
                 request.startLineParts = startLine.split(" ", 3);  
+
+                Logger.log("HttpServer", "Requested URL: " + request.getRequestUrl());
                 
                 // read the headers
                 Map<String, String> requestHeaders = new HashMap<>();
@@ -70,13 +75,18 @@ public class HttpServer {
                 }
                 request.headers = requestHeaders;
 
+                // print request headers.
+                requestHeaders.forEach((key, value) -> {
+                    System.out.println(key + ": " + value);
+                });
+
                 if (requestHeaders.containsKey(HttpHeader.CONTENT_TYPE) || requestHeaders.containsKey(HttpHeader.CONTENT_LENGTH)) {
-                    // HttpRequestBody<?> body = HttpBodyParser.parseRequestBody(
-                    //     socketInputStream,
-                    //     requestHeaders.get(HttpHeader.CONTENT_TYPE), 
-                    //     requestHeaders.get(HttpHeader.CONTENT_LENGTH)
-                    // );
-                    // request.body = body;
+                    Logger.log("HttpServer", "Request headers present to read");
+                    request.bodyData = HttpBodyParser.parseRequestBody(
+                        socketInputStream, 
+                        requestHeaders.get(HttpHeader.CONTENT_TYPE), 
+                        requestHeaders.get(HttpHeader.CONTENT_LENGTH)
+                    );
                 }
 
                 // initialize the response object with defaults.
@@ -89,7 +99,7 @@ public class HttpServer {
 
                     // Provide the user with request and response objects.
                     responseMessage = routeFunction.work(request, response);
-                    Logger.log("HttpServer", "Response sent successfully" + this.getActiveConnections());
+                    Logger.log("HttpServer", "Response sent successfully");
                 } catch (Exception e) {
                     responseMessage = response.getDefaultResponse();
                     Logger.log("HttpServer", "Responded with default response");
@@ -124,6 +134,4 @@ public class HttpServer {
     private int getActiveConnections(){
         return activeConnections.get();
     }
-
-    
 }
