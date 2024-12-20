@@ -1,6 +1,8 @@
 import java.util.HashMap;
 import java.util.Map;
 
+import Exception.PageNotFoundException;
+
 public class Route {
     // The functions that were stored here are userDefined lambda functions.
     private final Map<String, RouteFunction> routes = new HashMap<>();
@@ -16,7 +18,7 @@ public class Route {
         if(routes.containsKey(key)){
             return routes.get(key);
         }else{
-            throw new IllegalArgumentException("The provide route or method does not exist");
+            throw new PageNotFoundException("The provide route or method does not exist");
         }
     }
 }

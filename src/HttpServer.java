@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-
+import Exception.PageNotFoundException;
 import util.HttpHeader;
 import util.Logger;
 
@@ -55,8 +55,6 @@ public class HttpServer {
             BufferedReader socketInputStream = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         ) {
             
-            // printRequest(socketInputStream);
-            
             Request request = new Request();
             Response response;
             
@@ -83,7 +81,7 @@ public class HttpServer {
 
                 if (requestHeaders.containsKey(HttpHeader.CONTENT_TYPE) || requestHeaders.containsKey(HttpHeader.CONTENT_LENGTH)) {
                     Logger.log("Request headers present to read");
-                    request.bodyData = HttpBodyParser.parseRequestBody(
+                    request.body = HttpBodyParser.parseRequestBody(
                         socketInputStream, 
                         requestHeaders.get(HttpHeader.CONTENT_TYPE), 
                         requestHeaders.get(HttpHeader.CONTENT_LENGTH)
@@ -91,7 +89,7 @@ public class HttpServer {
                 }
 
                 // initialize the response object with defaults.
-                response = new Response(request.getRequestHttpVersion());
+                response = new Response();
 
                 String responseMessage = null; 
                 try {
@@ -101,9 +99,14 @@ public class HttpServer {
                     // Provide the user with request and response objects.
                     responseMessage = routeFunction.work(request, response);
                     Logger.log("Response sent successfully");
-                } catch (Exception e) {
-                    responseMessage = response.getDefaultResponse();
-                    Logger.log("Responded with default response");
+
+                }catch(PageNotFoundException pageNotFoundException){
+                    responseMessage = response.getResponse(404, "Page Not Found", null);
+                    Logger.log("Responded with page not found");
+                }catch (Exception e) {
+                    responseMessage = response.getResponse(500, "Internal Server Error", null);
+                    Logger.log("Responded with internal server error");
+                    e.printStackTrace();
                 }
                 // flush the response to the client.
                 socketOutputStream.print(responseMessage);

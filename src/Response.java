@@ -7,12 +7,9 @@ import util.HttpHeader;
 public class Response {
     private StringBuilder httpHeadersBuilder = new StringBuilder(); 
     private StringBuilder responseBuilder = new StringBuilder();
-    private final String httpResponseVersion;
     private Map<String, String> httpResponseHeaders = new HashMap<>();
 
-    public Response(String httpResponseVersion){
-        this.httpResponseVersion = httpResponseVersion;
-
+    public Response(){
         // initialize with default headers.
         this.httpResponseHeaders.put(HttpHeader.CONNECTION, "keep-alive");
         this.httpResponseHeaders.put(HttpHeader.SERVER, "Test/1.0 (windows)");
@@ -37,7 +34,7 @@ public class Response {
         buildHttpHeaders();
 
         // return the resposne
-        responseBuilder.append(httpResponseVersion)
+        responseBuilder.append("HTTP/1.1")
                             .append(" ")
                             .append(statusCode)
                             .append(" ")
@@ -53,10 +50,6 @@ public class Response {
         return responseBuilder.toString();
     }
 
-    public String getDefaultResponse(){
-        return this.getResponse(404, "Not Found", "<div>Page Not found</div>");
-    }
-
     private void buildHttpHeaders(){
         this.httpResponseHeaders.forEach((key, value) -> {
             this.httpHeadersBuilder.append(key)
@@ -64,5 +57,9 @@ public class Response {
                                     .append(value)
                                     .append("\r\n");
         });
+    }
+
+    public String getDefaultResponse(){
+        return this.getResponse(404, "Not Found", "<div>Page Not found</div>");
     }
 }
