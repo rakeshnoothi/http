@@ -30,7 +30,7 @@ public class HttpServer {
         try (
             ServerSocket serverSocket = new ServerSocket(this.portNumber);
         ){
-            Logger.log("HttpServer", "Server listenting on port: " + portNumber);
+            Logger.log("Server listenting on port: " + portNumber);
             
             while(true){
                 // accept the connection from client made to the listening port number.
@@ -39,13 +39,13 @@ public class HttpServer {
                 clientSocket.setSoTimeout(10000);
 
                 activeConnections.incrementAndGet();
-                Logger.log("HttpServer", "Client connected to the server");
-                Logger.log("HttpServer", "Active connections: " + this.getActiveConnections());
+                Logger.log("Client connected to the server");
+                Logger.log("Active connections: " + this.getActiveConnections());
 
                 threadPool.execute(() -> handleClient(clientSocket));
             }
         }catch(IOException ioException){
-            Logger.log("HttpServer", "Error creating socket");
+            Logger.log("Error creating socket");
         }
     }
 
@@ -62,9 +62,10 @@ public class HttpServer {
             
             String startLine;
             while((startLine = socketInputStream.readLine()) != null && startLine.length() >= 0){
+                System.out.println("Start line: " + startLine);
                 request.startLineParts = startLine.split(" ", 3);  
 
-                Logger.log("HttpServer", "Requested URL: " + request.getRequestUrl());
+                Logger.log("Requested URL: " + request.getRequestUrl());
                 
                 // read the headers
                 Map<String, String> requestHeaders = new HashMap<>();
@@ -81,7 +82,7 @@ public class HttpServer {
                 });
 
                 if (requestHeaders.containsKey(HttpHeader.CONTENT_TYPE) || requestHeaders.containsKey(HttpHeader.CONTENT_LENGTH)) {
-                    Logger.log("HttpServer", "Request headers present to read");
+                    Logger.log("Request headers present to read");
                     request.bodyData = HttpBodyParser.parseRequestBody(
                         socketInputStream, 
                         requestHeaders.get(HttpHeader.CONTENT_TYPE), 
@@ -99,34 +100,34 @@ public class HttpServer {
 
                     // Provide the user with request and response objects.
                     responseMessage = routeFunction.work(request, response);
-                    Logger.log("HttpServer", "Response sent successfully");
+                    Logger.log("Response sent successfully");
                 } catch (Exception e) {
                     responseMessage = response.getDefaultResponse();
-                    Logger.log("HttpServer", "Responded with default response");
+                    Logger.log("Responded with default response");
                 }
                 // flush the response to the client.
                 socketOutputStream.print(responseMessage);
                 socketOutputStream.flush();
 
                 if("close".equalsIgnoreCase(requestHeaders.getOrDefault(HttpHeader.CONNECTION, "keep-alive"))){
-                    Logger.log("HttpServer", "Close request received from browser");
+                    Logger.log("Close request received from browser");
                     break;
                 };
             }
         }catch(SocketTimeoutException socketTimoutException){
-            Logger.log("HttpServer", "Socket timeout");
+            Logger.log("Socket timeout");
             // respond with timeout exception.
             
         }catch (Exception e) {
-            Logger.log("HttpServer", "Error handling client: " + e.getMessage());
+            Logger.log("Error handling client: " + e.getMessage());
         }finally {
             try {
                 clientSocket.close(); 
                 activeConnections.decrementAndGet(); 
-                Logger.log("HttpServer", "Connection closed");
-                Logger.log("HttpServer", "Active connections: " + this.getActiveConnections());
+                Logger.log("Connection closed");
+                Logger.log("Active connections: " + this.getActiveConnections());
             } catch (IOException e) {
-                Logger.log("HttpServer", "Error closing client socket: " + e.getMessage());
+                Logger.log("Error closing client socket: " + e.getMessage());
             }
         }
     }

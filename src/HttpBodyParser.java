@@ -57,7 +57,7 @@ public class HttpBodyParser {
 
             return params;
         } catch (IOException e) {
-            Logger.log("HttpBodyParser", "Error occured parsing the body");
+            Logger.log("Error occured parsing the body");
             e.printStackTrace();
             return null;
         }
