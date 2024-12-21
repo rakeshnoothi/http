@@ -40,6 +40,8 @@ public class HttpBodyParser {
             char[] readChars = new char[contentLength];
             socketInputStream.read(readChars);
             String encodedString = new String(readChars);
+
+            Logger.log("Encoded string: " + encodedString);
             
             String[] pairs = encodedString.split("&");
 

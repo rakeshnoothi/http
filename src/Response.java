@@ -5,8 +5,7 @@ import java.util.Map;
 import util.HttpHeader;
 
 public class Response {
-    private StringBuilder httpHeadersBuilder = new StringBuilder(); 
-    private StringBuilder responseBuilder = new StringBuilder();
+     
     private Map<String, String> httpResponseHeaders = new HashMap<>();
 
     public Response(){
@@ -18,10 +17,11 @@ public class Response {
     }
 
     public void setHeader(String header, String value){
-        httpResponseHeaders.put(header, value);
+        this.httpResponseHeaders.put(header, value);
     }
 
     public String getResponse(int statusCode, String statusMessage, String body){
+        StringBuilder responseBuilder = new StringBuilder();
         if(body != null){
             // get the length of body.
             String contentLength =  String.valueOf(body.getBytes(StandardCharsets.UTF_8).length);
@@ -31,7 +31,7 @@ public class Response {
         }
 
         // build the http headers builder string.
-        buildHttpHeaders();
+        StringBuilder builtHttpHeaders = buildHttpHeaders();
 
         // return the resposne
         responseBuilder.append("HTTP/1.1")
@@ -40,8 +40,9 @@ public class Response {
                             .append(" ")
                             .append(statusMessage)
                             .append("\r\n")
-                            .append(this.httpHeadersBuilder)
+                            .append(builtHttpHeaders)
                             .append("\r\n");
+                            
 
         if(body != null){
             responseBuilder.append(body).toString(); 
@@ -50,16 +51,14 @@ public class Response {
         return responseBuilder.toString();
     }
 
-    private void buildHttpHeaders(){
+    private StringBuilder buildHttpHeaders(){
+        StringBuilder httpHeadersBuilder = new StringBuilder();
         this.httpResponseHeaders.forEach((key, value) -> {
-            this.httpHeadersBuilder.append(key)
+            httpHeadersBuilder.append(key)
                                     .append(": ")
                                     .append(value)
                                     .append("\r\n");
         });
-    }
-
-    public String getDefaultResponse(){
-        return this.getResponse(404, "Not Found", "<div>Page Not found</div>");
+        return httpHeadersBuilder;
     }
 }

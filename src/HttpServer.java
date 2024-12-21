@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import Exception.PageNotFoundException;
 import util.HttpHeader;
+import util.HttpMethod;
 import util.Logger;
 
 public class HttpServer {
@@ -36,7 +37,7 @@ public class HttpServer {
                 // accept the connection from client made to the listening port number.
                 // halts the program until new connection is bound to the socket.
                 Socket clientSocket = serverSocket.accept();
-                clientSocket.setSoTimeout(10000);
+                // clientSocket.setSoTimeout(10000);
 
                 activeConnections.incrementAndGet();
                 Logger.log("Client connected to the server");
@@ -55,11 +56,15 @@ public class HttpServer {
             BufferedReader socketInputStream = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         ) {
             
-            Request request = new Request();
-            Response response;
             
+           
+
             String startLine;
             while((startLine = socketInputStream.readLine()) != null && startLine.length() >= 0){
+                Request request = new Request();
+                
+                String responseMessage = null; 
+
                 System.out.println("Start line: " + startLine);
                 request.startLineParts = startLine.split(" ", 3);  
 
@@ -79,19 +84,30 @@ public class HttpServer {
                     System.out.println(key + ": " + value);
                 });
 
+                // check if the request has headers related to body.
                 if (requestHeaders.containsKey(HttpHeader.CONTENT_TYPE) || requestHeaders.containsKey(HttpHeader.CONTENT_LENGTH)) {
-                    Logger.log("Request headers present to read");
-                    request.body = HttpBodyParser.parseRequestBody(
-                        socketInputStream, 
-                        requestHeaders.get(HttpHeader.CONTENT_TYPE), 
-                        requestHeaders.get(HttpHeader.CONTENT_LENGTH)
-                    );
+                    // check if the request method is GET if it is then do not read the body.
+                    if(HttpMethod.GET.equals(request.getRequestMethod())){
+                        responseMessage = DefaultResponse.getBadRequestResponse();
+                        Logger.log("Responded with Bad request");
+                        this.flushResponse(socketOutputStream, responseMessage);
+                        
+                        // clear the input buffer if there is any data present.
+                        this.clearSocketInputStreamBuffer(socketInputStream);
+                        continue;
+                    }else{
+                        Logger.log("Request headers present to read");
+                        request.body = HttpBodyParser.parseRequestBody(
+                            socketInputStream, 
+                            requestHeaders.get(HttpHeader.CONTENT_TYPE), 
+                            requestHeaders.get(HttpHeader.CONTENT_LENGTH)
+                        );
+                    }
                 }
 
                 // initialize the response object with defaults.
-                response = new Response();
+                Response response = new Response();
 
-                String responseMessage = null; 
                 try {
                     // return the function provided for the specific route and method.
                     RouteFunction routeFunction = this.route.getRouteFunction(request.getRequestMethod(), request.getRequestUrl());
@@ -101,16 +117,16 @@ public class HttpServer {
                     Logger.log("Response sent successfully");
 
                 }catch(PageNotFoundException pageNotFoundException){
-                    responseMessage = response.getResponse(404, "Page Not Found", null);
+                    responseMessage = DefaultResponse.getPageNotFoundResponse();
+                    Logger.log("Response message: " + responseMessage);
                     Logger.log("Responded with page not found");
                 }catch (Exception e) {
-                    responseMessage = response.getResponse(500, "Internal Server Error", null);
+                    responseMessage = DefaultResponse.getInternalServerErrorResponse();
                     Logger.log("Responded with internal server error");
                     e.printStackTrace();
                 }
                 // flush the response to the client.
-                socketOutputStream.print(responseMessage);
-                socketOutputStream.flush();
+                this.flushResponse(socketOutputStream, responseMessage);
 
                 if("close".equalsIgnoreCase(requestHeaders.getOrDefault(HttpHeader.CONNECTION, "keep-alive"))){
                     Logger.log("Close request received from browser");
@@ -120,7 +136,6 @@ public class HttpServer {
         }catch(SocketTimeoutException socketTimoutException){
             Logger.log("Socket timeout");
             // respond with timeout exception.
-            
         }catch (Exception e) {
             Logger.log("Error handling client: " + e.getMessage());
         }finally {
@@ -137,5 +152,20 @@ public class HttpServer {
     
     private int getActiveConnections(){
         return activeConnections.get();
+    }
+
+    private void flushResponse(PrintWriter socketOutputStream, String responseMessage){
+        socketOutputStream.print(responseMessage);
+        socketOutputStream.flush();    
+    }
+
+    private void clearSocketInputStreamBuffer(BufferedReader socketInputStream){
+        try {
+            while(socketInputStream.ready()){
+                socketInputStream.read();
+            }
+        } catch (IOException e) {
+            Logger.log("Error clearing input buffer");
+        }
     }
 }
