@@ -55,27 +55,30 @@ public class HttpServer {
             PrintWriter socketOutputStream = new PrintWriter(clientSocket.getOutputStream(), true);
             BufferedReader socketInputStream = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         ) {
-            
-            
-           
-
             String startLine;
             while((startLine = socketInputStream.readLine()) != null && startLine.length() >= 0){
                 Request request = new Request();
                 
                 String responseMessage = null; 
 
-                System.out.println("Start line: " + startLine);
-                request.startLineParts = startLine.split(" ", 3);  
+                Logger.log("StartLine: " + startLine);
+                String startLinePair[] = startLine.split(" ", 3);
+                if(startLinePair.length <= 0){
+                    responseMessage = DefaultResponse.getBadRequestResponse();
+                    flushResponse(socketOutputStream, responseMessage);
+                    clearSocketInputStreamBuffer(socketInputStream);
+                    Logger.log("Not valid startline semantics");
+                    continue;
+                }
+                request.startLineParts = startLinePair;
 
-                Logger.log("Requested URL: " + request.getRequestUrl());
-                
                 // read the headers
-                Map<String, String> requestHeaders = new HashMap<>();
-                String header = null;
-                while(!(header = socketInputStream.readLine()).isEmpty() && header != null){
-                    String[] pair = header.split(": ", 2);
-                    requestHeaders.put(pair[0], pair[1]);
+                Map<String, String> requestHeaders = parseRequestHeaders(socketInputStream);
+                if(requestHeaders == null){
+                    responseMessage = DefaultResponse.getBadRequestResponse();
+                    flushResponse(socketOutputStream, responseMessage);
+                    clearSocketInputStreamBuffer(socketInputStream);
+                    continue;
                 }
                 request.headers = requestHeaders;
 
@@ -83,6 +86,12 @@ public class HttpServer {
                 requestHeaders.forEach((key, value) -> {
                     System.out.println(key + ": " + value);
                 });
+
+                // if close headers from client close the connection.
+                if("close".equalsIgnoreCase(requestHeaders.getOrDefault(HttpHeader.CONNECTION, "keep-alive"))){
+                    Logger.log("Close request received from browser");
+                    break;
+                };
 
                 // check if the request has headers related to body.
                 if (requestHeaders.containsKey(HttpHeader.CONTENT_TYPE) || requestHeaders.containsKey(HttpHeader.CONTENT_LENGTH)) {
@@ -118,20 +127,15 @@ public class HttpServer {
 
                 }catch(PageNotFoundException pageNotFoundException){
                     responseMessage = DefaultResponse.getPageNotFoundResponse();
-                    Logger.log("Response message: " + responseMessage);
                     Logger.log("Responded with page not found");
                 }catch (Exception e) {
                     responseMessage = DefaultResponse.getInternalServerErrorResponse();
                     Logger.log("Responded with internal server error");
-                    e.printStackTrace();
                 }
                 // flush the response to the client.
                 this.flushResponse(socketOutputStream, responseMessage);
 
-                if("close".equalsIgnoreCase(requestHeaders.getOrDefault(HttpHeader.CONNECTION, "keep-alive"))){
-                    Logger.log("Close request received from browser");
-                    break;
-                };
+                
             }
         }catch(SocketTimeoutException socketTimoutException){
             Logger.log("Socket timeout");
@@ -166,6 +170,26 @@ public class HttpServer {
             }
         } catch (IOException e) {
             Logger.log("Error clearing input buffer");
+        }
+    }
+
+    private Map<String, String> parseRequestHeaders(BufferedReader socketInputStream){
+        try {
+            Map<String, String> requestHeaders = new HashMap<>();
+            String header = null;
+
+            while(!(header = socketInputStream.readLine()).isEmpty() && header != null){
+                String[] pair = header.split(": ", 2);
+                if(pair.length <= 0){
+                    Logger.log("Invalid header semantics");
+                    return null;
+                }
+                requestHeaders.put(pair[0], pair[1]);
+            }
+            return requestHeaders;
+        } catch (IOException e) {
+            Logger.log("Error with socketInputStream");
+            return null;
         }
     }
 }

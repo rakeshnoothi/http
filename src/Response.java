@@ -5,7 +5,6 @@ import java.util.Map;
 import util.HttpHeader;
 
 public class Response {
-     
     private Map<String, String> httpResponseHeaders = new HashMap<>();
 
     public Response(){
